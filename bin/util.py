@@ -44,7 +44,7 @@ class Reporter:
             self.add(filename, '{0} does not contain {1}', name, key)
         elif expected is REPORTER_NOT_SET:
             pass
-        elif type(expected) in (tuple, set, list):
+        elif isinstance(expected, (tuple, set, list)):
             if values[key] not in expected:
                 self.add(
                     filename, '{0} {1} value {2} is not in {3}', name, key, values[key], expected)
