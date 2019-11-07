@@ -1,0 +1,42 @@
+name: Check The Carpentries Lesson and Template
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+
+  check-lesson:
+    name: Run lesson checks
+    runs-on: macos-latest
+    if: github.event.head.repo.name != 'styles'
+    steps:
+      - name: Checkout the lesson
+        uses: actions/checkout@v1
+      - name: Install pyYAML
+        run: python3.7 -m pip install PyYAML
+      - name: Install json, kramdown, and jekyll gems
+        run: gem install json kramdown jekyll
+      - name: Install R and its packages
+        run: |
+          brew install r
+          Rscript -e "install.packages(c('knitr', 'stringr', 'checkpoint', 'ggplot2'), repos = 'https://cran.rstudio.com', dependencies = TRUE)"
+      - name: Basic test (errors are fatal)
+        run: make lesson-check
+      - name: Extended test (errors are not fatal)
+        run: make lesson-check-all
+      - name: Build the site
+        run: make site
+
+  check-template:
+    name: Run lesson checks
+    runs-on: macos-latest
+    if: github.event.head.repo.name == 'styles'
+    steps:
+      - name: Checkout the lesson
+        uses: actions/checkout@v1
+      - name: Initialize the lesson
+        run: python3.7 bin/lesson_initialize.py
+      - name: Debuggin info
+        run: cat $GITHUB_EVENT_PATH
+
