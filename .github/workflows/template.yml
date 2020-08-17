@@ -5,8 +5,8 @@ on:
   pull_request:
 jobs:
   check-template:
-    name: Test lesson template
-    if: github.repository == 'carpentries/styles'
+    name: ${{ matrix.os }} ${{ matrix.lesson }}
+      # if: github.repository == 'carpentries/styles'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -114,5 +114,9 @@ jobs:
             eval sudo $cmd
           done < <(Rscript -e 'cat(remotes::system_requirements("ubuntu", "18.04"), sep = "\n")')
 
-      - run: make site
+      - name: Tests
+        run: |
+          which Rscript
+          which Rscript.EXE
+          make site
         working-directory: lesson

@@ -30,6 +30,12 @@ ifeq (,$(PYTHON))
   endif
 endif
 
+ifeq($(OS),Windows_NT)
+  RSCRIPT := Rscript.exe
+else
+  RSCRIPT := Rscript
+endif
+
 
 # Controls
 .PHONY : commands clean files
@@ -121,7 +127,7 @@ HTML_DST = \
 
 ## * install-rmd-deps : Install R packages dependencies to build the RMarkdown lesson
 install-rmd-deps:
-	Rscript -e 'source(file.path("bin", "dependencies.R")); install_dependencies(identify_dependencies())'
+	@$(RSCRIPT) -e 'source("bin/dependencies.R"); install_dependencies(identify_dependencies())'
 
 ## * lesson-md        : convert Rmarkdown files to markdown
 lesson-md    : ${RMD_DST}
