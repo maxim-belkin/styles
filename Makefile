@@ -3,9 +3,14 @@
 
 # Settings
 MAKEFILES=Makefile $(wildcard *.mk)
-JEKYLL=bundle config --local set path .vendor/bundle && bundle install && bundle update && bundle exec jekyll
 PARSER=bin/markdown_ast.rb
 DST=_site
+
+ifneq (, $(wildcard Gemfile*))
+  JEKYLL := bundle exec jekyll
+else
+  JEKYLL := jekyll
+endif
 
 # Check Python 3 is installed and determine if it's called via python3 or python
 # (https://stackoverflow.com/a/4933395)
@@ -32,7 +37,7 @@ endif
 
 
 # Controls
-.PHONY : commands clean files
+.PHONY : clean
 
 # Default target
 .DEFAULT_GOAL := commands
@@ -68,6 +73,9 @@ clean :
 	@rm -rf ${DST}
 	@rm -rf .sass-cache
 	@rm -rf bin/__pycache__
+	@rm -rf .vendor
+	@rm -rf .bundle
+	@rm -f Gemfile.lock
 	@find . -name .DS_Store -exec rm {} \;
 	@find . -name '*~' -exec rm {} \;
 	@find . -name '*.pyc' -exec rm {} \;
@@ -125,10 +133,11 @@ install-rmd-deps:
 
 ## * lesson-md        : convert Rmarkdown files to markdown
 lesson-md : ${RMD_DST}
+	@:
 
 _episodes/%.md: _episodes_rmd/%.Rmd install-rmd-deps
 	@mkdir -p _episodes
-	@bin/knit_lessons.sh $< $@
+	@$(SHELL) bin/knit_lessons.sh $< $@
 
 ## * lesson-check     : validate lesson Markdown
 lesson-check : lesson-fixme
@@ -157,6 +166,33 @@ lesson-fixme :
 ## IV. Auxililary (plumbing) commands
 ## =================================================
 
-## * commands         : show all commands.
+.PHONY : commands bundle
+
+## * commands         : show all commands
 commands :
 	@sed -n -e '/^##/s|^##[[:space:]]*||p' $(MAKEFILE_LIST)
+
+## * bundle           : install Ruby gems specified in Gemfile / Gemfile.lock
+bundle : .vendor/bundle
+	@:
+
+.vendor/bundle: Gemfile Gemfile.lock
+ifneq (, $(wildcard Gemfile*))
+	@bundle config set --local path '.vendor/bundle'
+	@bundle install
+	@bundle update --quiet github-pages
+	@touch .vendor/bundle
+else
+	@echo Can not create bundle: neither Gemfile nor Gemfile.lock have been found.
+endif
+
+# Gemfile target below does nothing. This is intentional.
+Gemfile:
+	@:
+
+Gemfile.lock: Gemfile
+ifneq (, $(wildcard Gemfile))
+	@bundle lock
+else
+	@echo Gemfile not found!
+endif
