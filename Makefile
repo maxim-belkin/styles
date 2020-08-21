@@ -6,8 +6,15 @@ MAKEFILES=Makefile $(wildcard *.mk)
 PARSER=bin/markdown_ast.rb
 DST=_site
 
-ifneq (, $(wildcard Gemfile*))
-  JEKYLL := bundle exec jekyll
+BUNDLE := $(shell which bundle 2>/dev/null)
+GEMFILES := $(wildcard Gemfile Gemfile.lock)
+
+ifneq (, $(GEMFILES))
+  ifneq (, $(BUNDLE))
+    JEKYLL := bundle exec jekyll
+  else
+    JEKYLL := jekyll
+  endif
 else
   JEKYLL := jekyll
 endif
@@ -177,13 +184,15 @@ bundle : .vendor/bundle
 	@:
 
 .vendor/bundle: Gemfile Gemfile.lock
-ifneq (, $(wildcard Gemfile*))
+ifeq (, $(BUNDLE))
+	@echo "Please install Bundler using 'gem install bundler'"
+else ifeq (, $(GEMFILES))
+	@echo Can not create bundle: neither Gemfile nor Gemfile.lock have been found.
+else
 	@bundle config set --local path '.vendor/bundle'
 	@bundle install
 	@bundle update --quiet github-pages
 	@touch .vendor/bundle
-else
-	@echo Can not create bundle: neither Gemfile nor Gemfile.lock have been found.
 endif
 
 # Gemfile target below does nothing. This is intentional.
@@ -191,8 +200,10 @@ Gemfile:
 	@:
 
 Gemfile.lock: Gemfile
-ifneq (, $(wildcard Gemfile))
-	@bundle lock
-else
+ifeq (, $(BUNDLE))
+	@echo "Please install Bundler using 'gem install bundler'"
+else ifeq (, $(wildcard Gemfile))
 	@echo Gemfile not found!
+else
+	@bundle lock
 endif
