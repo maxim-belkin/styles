@@ -7,17 +7,6 @@ PARSER=bin/markdown_ast.rb
 DST=_site
 
 BUNDLE := $(shell which bundle 2>/dev/null)
-GEMFILES := $(wildcard Gemfile Gemfile.lock)
-
-ifneq (, $(GEMFILES))
-  ifneq (, $(BUNDLE))
-    JEKYLL := bundle exec jekyll
-  else
-    JEKYLL := jekyll
-  endif
-else
-  JEKYLL := jekyll
-endif
 
 # Check Python 3 is installed and determine if it's called via python3 or python
 # (https://stackoverflow.com/a/4933395)
@@ -53,12 +42,12 @@ endif
 ## =================================================
 
 ## * serve            : render website and run a local server
-serve : lesson-md
-	${JEKYLL} serve
+serve : lesson-md .vendor/bundle index.md reference.md setup.md
+	@bundle exec jekyll serve
 
 ## * site             : build website but do not run a server
-site : lesson-md
-	${JEKYLL} build
+site : lesson-md .vendor/bundle index.md reference.md setup.md
+	@bundle exec jekyll build
 
 ## * docker-serve     : use Docker to serve the site
 docker-serve :
@@ -173,37 +162,68 @@ lesson-fixme :
 ## IV. Auxililary (plumbing) commands
 ## =================================================
 
-.PHONY : commands bundle
+.PHONY : commands bundle update-bundle
 
 ## * commands         : show all commands
 commands :
 	@sed -n -e '/^##/s|^##[[:space:]]*||p' $(MAKEFILE_LIST)
 
-## * bundle           : install Ruby gems specified in Gemfile / Gemfile.lock
+## * bundle           : install Ruby gems (required for building lesson website locally)
 bundle : .vendor/bundle
 	@:
 
-.vendor/bundle: Gemfile Gemfile.lock
+.vendor/bundle: Gemfile.lock
 ifeq (, $(BUNDLE))
-	@echo "Please install Bundler using 'gem install bundler'"
-else ifeq (, $(GEMFILES))
-	@echo Can not create bundle: neither Gemfile nor Gemfile.lock have been found.
+	$(error Please install Bundler using 'gem install bundler')
 else
 	@bundle config set --local path '.vendor/bundle'
 	@bundle install
-	@bundle update --quiet github-pages
 	@touch .vendor/bundle
 endif
 
-# Gemfile target below does nothing. This is intentional.
+## * update-bundle    : update Ruby gems (required for building lesson website locally)
+update-bundle : Gemfile.lock
+ifeq (, $(BUNDLE))
+	$(error Please install Bundler using 'gem install bundler')
+else
+	@bundle config set --local path '.vendor/bundle'
+	@bundle update github-pages
+	@touch .vendor/bundle
+endif
+
 Gemfile:
+ifeq (, $(wildcard Gemfile))
+	$(error Gemfile not found!)
+else
 	@:
+endif
 
 Gemfile.lock: Gemfile
 ifeq (, $(BUNDLE))
-	@echo "Please install Bundler using 'gem install bundler'"
-else ifeq (, $(wildcard Gemfile))
-	@echo Gemfile not found!
-else
+	$(error Please install Bundler using 'gem install bundler')
+else ifeq (, $(wildcard Gemfile.lock))
 	@bundle lock
+else
+	@:
+endif
+
+index.md :
+ifeq (, $(wildcard index.md))
+	$(error index.md not found)
+else
+	@:
+endif
+
+setup.md :
+ifeq (, $(wildcard setup.md))
+	$(error setup.md not found)
+else
+	@:
+endif
+
+reference.md :
+ifeq (, $(wildcard reference.md))
+	$(error reference.md not found)
+else
+	@:
 endif
