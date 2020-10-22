@@ -201,10 +201,8 @@ endif
 Gemfile.lock: Gemfile
 ifeq (, $(BUNDLE))
 	$(error Please install Bundler using 'gem install bundler')
-else ifeq (, $(wildcard Gemfile.lock))
-	@bundle lock
 else
-	@:
+	@bundle lock --update
 endif
 
 index.md :
